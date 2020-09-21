@@ -15,6 +15,7 @@ class PAINTBALLFARNIA_API AFog : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AFog();
+
 	virtual void PostInitializeComponents() override;
 	// Set the fog size
 	void setSize(float);
@@ -23,6 +24,7 @@ public:
 
 private:
 	void UpdateTextureRegions(UTexture2D * Texture, int32 MipIndex, uint32 NumRegions, FUpdateTextureRegion2D * Regions, uint32 SrcPitch, uint32 SrcBpp, uint8 * SrcData, bool bFreeData);
+
 	// Fog texture size  
 	static const int m_textureSize = 512;
 	UPROPERTY() UStaticMeshComponent * m_squarePlane;

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Fog.h"
 #include "PaintballFarniaCharacter.generated.h"
 
 class UInputComponent;
@@ -52,6 +53,11 @@ protected:
 	virtual void BeginPlay();
 
 public:
+	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY()
+		AFog* m_fog;
+
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
@@ -79,6 +85,10 @@ public:
 	/** Whether to use motion controller location for aiming. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	uint32 bUsingMotionControllers : 1;
+
+	// Fog of war radius reveal
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		float fowRadiusReveal = 300;
 
 protected:
 	

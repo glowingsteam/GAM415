@@ -5,9 +5,9 @@
 
 
 // Sets default values
-AFog::AFog():m_wholeTextureRegion(0,0,0,0, m_textureSize, m_textureSize)
+AFog::AFog(): m_wholeTextureRegion(0,0,0,0, m_textureSize, m_textureSize)
 {
-	m_coverSize = 500;
+	m_coverSize = 10000.0f;
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	// Create a planar mesh from engine's planar static mesh.  
@@ -18,7 +18,7 @@ AFog::AFog():m_wholeTextureRegion(0,0,0,0, m_textureSize, m_textureSize)
 		m_squarePlane->SetStaticMesh(asset.Object);
 	}
 	m_squarePlane->TranslucencySortPriority = 100;
-	m_squarePlane->SetRelativeScale3D(FVector(m_coverSize, m_coverSize, 1));
+	m_squarePlane->SetRelativeScale3D(FVector(m_coverSize, m_coverSize, 1.0f));
 	// Load the base material from your created material.  
 	{
 		static ConstructorHelpers::FObjectFinder <UMaterial> asset(TEXT("Material'/Game/Shader/FogTexture.FogTexture'"));
