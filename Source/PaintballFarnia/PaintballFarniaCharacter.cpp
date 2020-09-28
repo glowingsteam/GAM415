@@ -92,6 +92,7 @@ void APaintballFarniaCharacter::BeginPlay()
 
 	// Spawn fog and set ref
 	m_fog = GetWorld()->SpawnActor<AFog>(AFog::StaticClass());
+	m_fog->SetActorLocation(m_fog->GetActorLocation() + FVector(0.0f, 0.0f, 300.0f));
 
 	//Attach gun mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
 	FP_Gun->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
