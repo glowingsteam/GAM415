@@ -68,6 +68,7 @@ void AGlowMesh::Tick(float DeltaTime)
 
 void AGlowMesh::TriggerGlow_Implementation()
 {
+	// Set initial values and reset timer
 	InstancedMaterial->SetVectorParameterValue("Color", FVector(GlowColor.R, GlowColor.G, GlowColor.B));
 	InstancedMaterial->SetScalarParameterValue("Emissive", GlowIntensity);
 	currentGlowIntensity = GlowIntensity;

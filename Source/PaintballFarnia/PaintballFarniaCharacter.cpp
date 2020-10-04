@@ -285,18 +285,31 @@ void APaintballFarniaCharacter::OnFire()
 	*/
 
 	// 5-3 Logic
+	// Create blank hit
 	FHitResult HitResult;
+
+	// Set start location and rotation
 	FVector StartLocation = FirstPersonCameraComponent->GetComponentLocation();
 	FRotator Direction = FirstPersonCameraComponent->GetComponentRotation();
+
+	// Add together for end location
 	FVector EndLocation = StartLocation + Direction.Vector() * 10000;
+
+	// Ignore casting actor
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
+
+	// Start Trace
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams)) {
+
+		// Cast hit actor for interface
 		IGlowInterface* pointerToInterface = Cast<IGlowInterface>(HitResult.GetActor());
 		if (pointerToInterface != nullptr)
 		{
+			// Execute command if interface found
 			pointerToInterface->Execute_TriggerGlow(HitResult.GetActor());
 		}
+
 		// Debug Interface
 		else
 		{
