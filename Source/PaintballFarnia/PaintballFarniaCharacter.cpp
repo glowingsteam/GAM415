@@ -10,6 +10,8 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "MotionControllerComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "GlowInterface.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -48,8 +50,18 @@ APaintballFarniaCharacter::APaintballFarniaCharacter()
 	FP_Gun->bCastDynamicShadow = false;
 	FP_Gun->CastShadow = false;
 	// FP_Gun->SetupAttachment(Mesh1P, TEXT("GripPoint"));
-	FP_Gun->SetupAttachment(RootComponent);
+	//FP_Gun->SetupAttachment(RootComponent);
 
+	// Init Shader vals
+	EndColorBuildup = 0;
+	EndColorBuildupDirection = 1;
+	PixelShaderTopLeftColor = FColor::Green;
+	ComputeShaderSimulationSpeed = 1.0;
+	ComputeShaderBlend = 0.5f;
+	ComputeShaderBlendScalar = 0;
+	TotalElapsedTime = 0;
+
+	// Init player muzzle & proj spawn loc
 	FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
 	FP_MuzzleLocation->SetupAttachment(FP_Gun);
 	FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
@@ -108,6 +120,23 @@ void APaintballFarniaCharacter::BeginPlay()
 		VR_Gun->SetHiddenInGame(true, true);
 		Mesh1P->SetHiddenInGame(false, true);
 	}
+
+
+	// Init PixelShading and ComputeShading
+	PixelShading = new FPixelShaderUsageExample(PixelShaderTopLeftColor, GetWorld()->Scene->GetFeatureLevel());
+	ComputeShading = new FComputeShaderUsageExample(ComputeShaderSimulationSpeed, 1024, 1024, GetWorld()->Scene->GetFeatureLevel());
+
+}
+
+void APaintballFarniaCharacter::BeginDestroy()
+{
+	Super::BeginDestroy();
+	if (PixelShading) {
+		delete PixelShading;
+	}
+	if (ComputeShading) {
+		delete ComputeShading;
+	}
 }
 
 void APaintballFarniaCharacter::Tick(float DeltaTime)
@@ -117,6 +146,23 @@ void APaintballFarniaCharacter::Tick(float DeltaTime)
 	FVector Loc = this->GetActorLocation();
 
 	m_fog->revealSmoothCircle(FVector2D(Loc.X, Loc.Y), fowRadiusReveal);
+
+	// Add current to elapsed time
+	TotalElapsedTime += DeltaTime;
+	if (PixelShading) {
+		EndColorBuildup = FMath::Clamp(EndColorBuildup + DeltaTime * EndColorBuildupDirection, 0.0f, 1.0f);
+		if (EndColorBuildup >= 1.0 || EndColorBuildup <= 0) {
+			EndColorBuildupDirection *= -1;
+		}
+		FTexture2DRHIRef InputTexture = NULL;
+		if (ComputeShading) {
+			ComputeShading->ExecuteComputeShader(TotalElapsedTime);
+			InputTexture = ComputeShading->GetTexture(); //This is the output texture from the compute shader that we will pass to the pixel shader. 
+		}
+		ComputeShaderBlend = FMath::Clamp(ComputeShaderBlend + ComputeShaderBlendScalar * DeltaTime, 0.0f, 1.0f);
+		PixelShading->ExecutePixelShader(RenderTarget, InputTexture, FColor(EndColorBuildup * 255, 0, 0, 255), ComputeShaderBlend);
+	}
+
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -150,10 +196,18 @@ void APaintballFarniaCharacter::SetupPlayerInputComponent(class UInputComponent*
 	PlayerInputComponent->BindAxis("TurnRate", this, &APaintballFarniaCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &APaintballFarniaCharacter::LookUpAtRate);
+
+	//ShaderPluginDemo Specific input mappings  
+	InputComponent->BindAction("SavePixelShaderOutput", IE_Pressed, this, &APaintballFarniaCharacter::SavePixelShaderOutput);
+	InputComponent->BindAction("SaveComputeShaderOutput", IE_Pressed, this, &APaintballFarniaCharacter::SaveComputeShaderOutput);
+	InputComponent->BindAxis("ComputeShaderBlend", this, &APaintballFarniaCharacter::ModifyComputeShaderBlend);
+
 }
 
 void APaintballFarniaCharacter::OnFire()
 {
+	// OG Logic
+	/*
 	// try and fire a projectile
 	if (ProjectileClass != NULL)
 	{
@@ -197,6 +251,63 @@ void APaintballFarniaCharacter::OnFire()
 		{
 			AnimInstance->Montage_Play(FireAnimation, 1.f);
 		}
+	}
+	*/
+
+	// 5-2 Logic
+	/*
+	// Start a trace with distance 10,000
+	FHitResult HitResult;
+	FVector StartLocation = FirstPersonCameraComponent->GetComponentLocation();
+	FRotator Direction = FirstPersonCameraComponent->GetComponentRotation();
+	FVector EndLocation = StartLocation + Direction.Vector() * 10000;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	// Do the trace
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams)) {
+		// Find hit meshes and actors
+		TArray <UStaticMeshComponent*> StaticMeshComponents = TArray <UStaticMeshComponent*>();
+		AActor* HitActor = HitResult.GetActor();
+		// Check if hit was valid
+		if (NULL != HitActor) {
+			// Get hit meshes
+			HitActor->GetComponents <UStaticMeshComponent>(StaticMeshComponents);
+			for (int32 i = 0; i < StaticMeshComponents.Num(); i++) {
+				// Change hit mesh to our material
+				UStaticMeshComponent * CurrentStaticMeshPtr = StaticMeshComponents[i];
+				CurrentStaticMeshPtr->SetMaterial(0, MaterialToApplyToClickedObject);
+				UMaterialInstanceDynamic* MID = CurrentStaticMeshPtr->CreateAndSetMaterialInstanceDynamic(0);
+				UTexture* CastedRenderTarget = Cast <UTexture>(RenderTarget);
+				MID->SetTextureParameterValue("InputTexture", CastedRenderTarget);
+			}
+		}
+	}
+	*/
+
+	// 5-3 Logic
+	FHitResult HitResult;
+	FVector StartLocation = FirstPersonCameraComponent->GetComponentLocation();
+	FRotator Direction = FirstPersonCameraComponent->GetComponentRotation();
+	FVector EndLocation = StartLocation + Direction.Vector() * 10000;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams)) {
+		IGlowInterface* pointerToInterface = Cast<IGlowInterface>(HitResult.GetActor());
+		if (pointerToInterface != nullptr)
+		{
+			pointerToInterface->Execute_TriggerGlow(HitResult.GetActor());
+		}
+		// Debug Interface
+		else
+		{
+			FString actorName = UKismetSystemLibrary::GetDisplayName(HitResult.GetActor());
+			UE_LOG(LogTemp, Warning, TEXT("Failed to cast to interface on actor: %s"), *actorName);
+		}
+	}
+	// Debug Hit
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Didnt hit anything"));
 	}
 }
 
@@ -311,4 +422,19 @@ bool APaintballFarniaCharacter::EnableTouchscreenMovement(class UInputComponent*
 	}
 	
 	return false;
+}
+
+void APaintballFarniaCharacter::ModifyComputeShaderBlend(float NewScalar)
+{
+	ComputeShaderBlendScalar = NewScalar;
+}
+
+void APaintballFarniaCharacter::SavePixelShaderOutput()
+{
+	PixelShading->Save();
+}
+
+void APaintballFarniaCharacter::SaveComputeShaderOutput()
+{
+	ComputeShading->Save();
 }

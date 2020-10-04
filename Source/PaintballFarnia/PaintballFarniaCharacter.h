@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Fog.h"
+#include "Engine.h"
+#include "PixelShaderUsageExample.h"
+#include "ComputeShaderUsageExample.h"
 #include "PaintballFarniaCharacter.generated.h"
 
 class UInputComponent;
@@ -90,6 +93,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 		float fowRadiusReveal = 300;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ShaderDemo)
+		FColor PixelShaderTopLeftColor;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ShaderDemo)
+		float ComputeShaderSimulationSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ShaderDemo)
+		UMaterialInterface * MaterialToApplyToClickedObject;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ShaderDemo)
+	UTextureRenderTarget2D * RenderTarget;
+
+
 protected:
 	
 	/** Fires a projectile. */
@@ -128,6 +141,9 @@ protected:
 	void EndTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
 	void TouchUpdate(const ETouchIndex::Type FingerIndex, const FVector Location);
 	TouchData	TouchItem;
+
+	// Destruction Event
+	void BeginDestroy() override;
 	
 protected:
 	// APawn interface
@@ -148,5 +164,18 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
+private:
+	FPixelShaderUsageExample * PixelShading;
+	FComputeShaderUsageExample * ComputeShading;
+	float EndColorBuildup;
+	float EndColorBuildupDirection;
+	float ComputeShaderBlendScalar;
+	float ComputeShaderBlend;
+	float TotalElapsedTime;
+
+	// Private Shader functions for modifying and saving
+	void ModifyComputeShaderBlend(float NewScalar);
+	void SavePixelShaderOutput();
+	void SaveComputeShaderOutput();
 };
 
