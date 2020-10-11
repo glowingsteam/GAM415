@@ -74,3 +74,7 @@ void AGlowMesh::TriggerGlow_Implementation()
 	currentGlowIntensity = GlowIntensity;
 	currentGlowTime = GlowTime;
 }
+
+void AGlowMesh::ChangeColor_Implementation(EColorPicker newColor)
+{
+}

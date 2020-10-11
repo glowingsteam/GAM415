@@ -8,6 +8,7 @@
 #include "Engine.h"
 #include "PixelShaderUsageExample.h"
 #include "ComputeShaderUsageExample.h"
+#include "pbn/ColorPicker.h"
 #include "PaintballFarniaCharacter.generated.h"
 
 class UInputComponent;
@@ -101,6 +102,9 @@ public:
 		UMaterialInterface * MaterialToApplyToClickedObject;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ShaderDemo)
 	UTextureRenderTarget2D * RenderTarget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Color Picker")
+		EColorPicker PickedColor;
 
 
 protected:

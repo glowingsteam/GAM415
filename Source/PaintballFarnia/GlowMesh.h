@@ -35,6 +35,9 @@ public:
 	// Glow Interaction
 	virtual void TriggerGlow_Implementation() override;
 
+	// Glow Interaction
+	virtual void ChangeColor_Implementation(EColorPicker newColor) override;
+
 public:
 	/** Glow Material */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Glow Settings")

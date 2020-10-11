@@ -307,7 +307,7 @@ void APaintballFarniaCharacter::OnFire()
 		if (pointerToInterface != nullptr)
 		{
 			// Execute command if interface found
-			pointerToInterface->Execute_TriggerGlow(HitResult.GetActor());
+			pointerToInterface->Execute_ChangeColor(HitResult.GetActor(), PickedColor);
 		}
 
 		// Debug Interface

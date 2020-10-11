@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "pbn/ColorPicker.h"
 #include "GlowInterface.generated.h"
 
 // This class does not need to be modified.
@@ -25,5 +26,7 @@ class PAINTBALLFARNIA_API IGlowInterface
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void TriggerGlow();
-	
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
+	void ChangeColor(EColorPicker newColor);
 };
